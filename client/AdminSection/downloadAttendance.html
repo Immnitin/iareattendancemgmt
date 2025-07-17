@@ -1,14 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Session-wise Attendance Report</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet"/>
-  <link rel="stylesheet" href="./style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
   <style>
-    
+    :root {
+      --color-primary: #00796B;
+      --color-white: #fff;
+      --color-light: #ccc;
+      --color-background: #f4f4f4;
+      --box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      --border-radius-1: 6px;
+      --border-radius-2: 12px;
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
       background: var(--color-background);
@@ -49,14 +60,16 @@
     }
 
     main {
-      padding-top: 120px;
+      padding: 120px 20px 60px;
+      display: flex;
+      justify-content: center;
     }
 
     form {
       background: var(--color-white);
       padding: 2rem;
       max-width: 600px;
-      margin: auto;
+      width: 100%;
       box-shadow: var(--box-shadow);
       border-radius: var(--border-radius-2);
       display: flex;
@@ -87,6 +100,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
+      padding-top: 0.5rem;
     }
 
     .checkbox-group input[type="checkbox"] {
@@ -104,12 +118,12 @@
       font-size: 0.9rem;
     }
 
-    .checkbox-group input[type="checkbox"]:checked + label {
+    .checkbox-group input[type="checkbox"]:checked+label {
       background: var(--color-primary);
       color: white;
     }
 
-    form .btn {
+    .btn {
       background: var(--color-primary);
       color: white;
       padding: 0.8rem;
@@ -134,30 +148,6 @@
         flex-direction: column;
       }
     }
-
-    main {
-  padding-top: 120px;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-bottom: 40px;
-}
-main {
-  padding: 120px 20px 60px;
-  display: flex;
-  justify-content: center;
-}
-
-form {
-  width: 100%;
-  max-width: 600px;
-}
-.checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-top: 0.5rem;  /* You can increase this value as needed */
-}
-
   </style>
 </head>
 
@@ -239,112 +229,171 @@ form {
   </main>
 
   <script>
-  const backendUrl = "https://iareattendancemgmt.onrender.com";
+    const backendUrl = "https://iareattendancemgmt.onrender.com";
 
-  document.getElementById("date").value = new Date().toISOString().split("T")[0];
+    document.getElementById("date").value = new Date().toISOString().split("T")[0];
 
-  const getSelectedBatches = () => {
-    return Array.from(document.querySelectorAll('input[name="batch"]:checked'))
-      .map(el => el.value);
-  };
+    const getSelectedBatches = () => {
+      return Array.from(document.querySelectorAll('input[name="batch"]:checked'))
+        .map(el => el.value);
+    };
 
-  const showMessage = (text, color) => {
-    const messageBox = document.getElementById("messageBox");
-    messageBox.style.color = color;
-    messageBox.textContent = text;
-  };
+    const showMessage = (text, color) => {
+      const messageBox = document.getElementById("messageBox");
+      messageBox.style.color = color;
+      messageBox.textContent = text;
+    };
 
-  const buildParams = (batches, date, session) => {
-    const params = new URLSearchParams();
-    batches.forEach(batch => params.append("batch", batch));
-    params.append("date", date);
-    params.append("session", session);
-    return params.toString();
-  };
+    const buildParams = (batches, date, session) => {
+      const params = new URLSearchParams();
+      batches.forEach(batch => params.append("batch", batch));
+      params.append("date", date);
+      params.append("session", session);
+      return params.toString();
+    };
 
-  const formatDate = (isoDate) => {
-    const [year, month, day] = isoDate.split("-");
-    return `${day}-${month}-${year}`;
-  };
+    const formatDate = (isoDate) => {
+      const [year, month, day] = isoDate.split("-");
+      return `${day}-${month}-${year}`;
+    };
 
-  // PDF Download
-  document.getElementById("pdfBtn").addEventListener("click", () => {
-    const date = document.getElementById("date").value;
-    const session = document.getElementById("session").value;
-    const batches = getSelectedBatches();
+    // ✅ Session to Batch Mapping
+    const sessionBatchMap = {
+      FN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      AN: ["b3", "b6", "b10", "b11"]
+    };
+    const batchMapByDayAndSession = {
+      Mon: {
+        FN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      AN: ["b3", "b6", "b10", "b11"]
+      },
+      Tue: {
+        FN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      AN: ["b3", "b6", "b10", "b11"]
+      },
+      Wed: {
+        FN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      AN: ["b3", "b6", "b10", "b11"]
+      },
+      Thu: {
+        AN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      FN: ["b3", "b6", "b10", "b11"]
+      },
+      Fri: {
+        AN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      FN: ["b3", "b6", "b10", "b11"]
+      },
+      Sat: {
+        AN: ["b1", "b2", "b4", "b5", "b7", "b8", "b9"],
+      FN: ["b3", "b6", "b10", "b11"]
+      }
+    };
 
-    if (!batches.length || !date || !session) {
-      showMessage("⚠️ Please select batch(es), date, and session.", "crimson");
-      return;
-    }
+    function getWeekday(dateStr) {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return days[new Date(dateStr).getDay()];
+}
 
-    const formattedDate = formatDate(date);
-    const fileName = `VSEM_${session}-${formattedDate}-AttendanceReport.pdf`;
 
-    showMessage("⏳ Downloading PDF Report...", "green");
-    const params = buildParams(batches, date, session);
+    document.getElementById("session").addEventListener("change", () => {
+  const date = document.getElementById("date").value;
+  const session = document.getElementById("session").value;
 
-    fetch(`${backendUrl}/api/admin/attendance-batch-report-pdf?${params}`)
-      .then(response => {
-        if (!response.ok) throw new Error("Failed to generate PDF report.");
-        return response.blob();
-      })
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        showMessage("✅ PDF Report downloaded successfully!", "green");
-      })
-      .catch(err => {
-        console.error(err);
-        showMessage("❌ Error generating PDF report.", "crimson");
-      });
+  if (!date || !session) return;
+
+  const weekday = getWeekday(date);
+  console.log(weekday);
+  const batchList = batchMapByDayAndSession[weekday]?.[session] || [];
+
+  // Uncheck all first
+  document.querySelectorAll('input[name="batch"]').forEach(cb => cb.checked = false);
+
+  // Check relevant
+  batchList.forEach(id => {
+    const cb = document.getElementById(id);
+    if (cb) cb.checked = true;
   });
+});
 
-  // Excel Download
-  document.getElementById("excelBtn").addEventListener("click", () => {
-    const date = document.getElementById("date").value;
-    const session = document.getElementById("session").value;
-    const batches = getSelectedBatches();
 
-    if (!batches.length || !date || !session) {
-      showMessage("⚠️ Please select batch(es), date, and session.", "crimson");
-      return;
-    }
+    // PDF Download
+    document.getElementById("pdfBtn").addEventListener("click", () => {
+      const date = document.getElementById("date").value;
+      const session = document.getElementById("session").value;
+      const batches = getSelectedBatches();
 
-    const formattedDate = formatDate(date);
-    const fileName = `VSEM_${session}-${formattedDate}-AttendanceReport.xlsx`;
+      if (!batches.length || !date || !session) {
+        showMessage("⚠️ Please select batch(es), date, and session.", "crimson");
+        return;
+      }
 
-    showMessage("⏳ Downloading Excel Report...", "green");
-    const params = buildParams(batches, date, session) + "&format=excel";
+      const formattedDate = formatDate(date);
+      const fileName = `VSEM_${session}-${formattedDate}-AttendanceReport.pdf`;
 
-    fetch(`${backendUrl}/api/admin/attendance-batch-report?${params}`)
-      .then(response => {
-        if (!response.ok) throw new Error("Failed to generate Excel report.");
-        return response.blob();
-      })
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        showMessage("✅ Excel Report downloaded successfully!", "green");
-      })
-      .catch(err => {
-        console.error(err);
-        showMessage("❌ Error generating Excel report.", "crimson");
-      });
-  });
-</script>
+      showMessage("⏳ Downloading PDF Report...", "green");
+      const params = buildParams(batches, date, session);
 
+      fetch(`${backendUrl}/api/admin/attendance-batch-report-pdf?${params}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to generate PDF report.");
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          showMessage("✅ PDF Report downloaded successfully!", "green");
+        })
+        .catch(err => {
+          console.error(err);
+          showMessage("❌ Error generating PDF report.", "crimson");
+        });
+    });
+
+    // Excel Download
+    document.getElementById("excelBtn").addEventListener("click", () => {
+      const date = document.getElementById("date").value;
+      const session = document.getElementById("session").value;
+      const batches = getSelectedBatches();
+
+      if (!batches.length || !date || !session) {
+        showMessage("⚠️ Please select batch(es), date, and session.", "crimson");
+        return;
+      }
+
+      const formattedDate = formatDate(date);
+      const fileName = `VSEM_${session}-${formattedDate}-AttendanceReport.xlsx`;
+
+      showMessage("⏳ Downloading Excel Report...", "green");
+      const params = buildParams(batches, date, session) + "&format=excel";
+
+      fetch(`${backendUrl}/api/admin/attendance-batch-report?${params}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to generate Excel report.");
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          showMessage("✅ Excel Report downloaded successfully!", "green");
+        })
+        .catch(err => {
+          console.error(err);
+          showMessage("❌ Error generating Excel report.", "crimson");
+        });
+    });
+  </script>
 </body>
+
 </html>

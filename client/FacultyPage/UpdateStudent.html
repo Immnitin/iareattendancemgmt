@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Update Student</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --color-primary: #00796B;
+      --color-danger: #ff5252;
+      --color-info: #7d8da1;
+      --color-white: #ffffff;
+      --color-light: rgba(132, 139, 200, 0.18);
+      --color-dark: #2d2d2d;
+
+      --border-radius-1: 0.4rem;
+      --border-radius-2: 1.2rem;
+      --box-shadow: 0 2rem 3rem var(--color-light);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      text-decoration: none;
+      list-style: none;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f6f6f9;
+      color: var(--color-dark);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: var(--color-white);
+      box-shadow: var(--box-shadow);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo img {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 2rem auto;
+      background-color: var(--color-white);
+      padding: 2rem;
+      border-radius: var(--border-radius-2);
+      box-shadow: var(--box-shadow);
+    }
+
+    .container h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+      color: var(--color-primary);
+    }
+
+    form input,
+    form select {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--color-light);
+      border-radius: var(--border-radius-1);
+      font-size: 1rem;
+    }
+
+    .btn {
+      width: 100%;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      padding: 0.7rem;
+      border: none;
+      border-radius: var(--border-radius-1);
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: transparent;
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+    }
+
+    .text-muted {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--color-info);
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 1rem;
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Update Student</h2>
+    <form id="updateStudentForm">
+      <input type="text" id="rollno" placeholder="Roll Number (required)" required />
+      <input type="text" id="name" placeholder="Name" />
+      <input type="email" id="email" placeholder="Email" />
+      <input type="text" id="password" placeholder="Password" />
+      <input type="text" id="branch" placeholder="Branch" />
+      <input type="text" id="batch" placeholder="Batch" />
+      <button type="submit" class="btn">Update Student</button>
+        <a href="./index.html" class="text-muted cancel-link">Cancel</a>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("updateStudentForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const rollno = document.getElementById("rollno").value.trim();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const branch = document.getElementById("branch").value.trim();
+      const batch = document.getElementById("batch").value.trim();
+
+      const updates = {};
+      if (name) updates.name = name;
+      if (email) updates.email = email;
+      if (password) updates.password = password;
+      if (branch) updates.branch = branch;
+      if (batch) updates.batch = batch;
+
+      if (!rollno) {
+        alert("Roll number is required.");
+        return;
+      }
+
+      const backendUrl = "https://iareattendancemgmt.onrender.com";
+
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/student/${rollno}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        });
+
+        const data = await res.json();
+        alert(data.message || "Student updated.");
+      } catch (err) {
+        console.error(err);
+        alert("Error updating student.");
+      }
+    });
+  </script>
+</body>
+</html>

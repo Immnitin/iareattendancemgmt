@@ -1,4 +1,3 @@
-<!-- qr-scan.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,7 +34,6 @@
       align-items: center;
       padding: 20px 10px;
       height: 100vh;
-      /* overflow: hidden; */
     }
 
     h1 {
@@ -68,7 +66,6 @@
       font-weight: 600;
       line-height: 1.5;
     }
-
 
     #reader {
       width: 100%;
@@ -125,10 +122,55 @@
       .container {
         padding: 12px;
       }
+    }
 
-      #reader {
-        /* width: %; */
-      }
+    /* Modal Styling */
+    #confirmModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    #confirmModalContent {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 350px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    #confirmModal input {
+      margin: 10px 0;
+      padding: 8px 12px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #confirmModal button {
+      padding: 8px 14px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+
+    #confirmBtn {
+      background: var(--color-primary);
+    }
+
+    #cancelBtn {
+      background: gray;
     }
   </style>
 </head>
@@ -145,6 +187,19 @@
   </div>
   <footer>© 2025 • Camera permission required</footer>
 
+  <!-- Faculty ID Confirmation Modal -->
+  <div id="confirmModal">
+    <div id="confirmModalContent">
+      <h3>🔒 Faculty Verification</h3>
+      <p style="font-size:14px; color:#555;">Enter your Faculty ID to confirm</p>
+      <input type="text" id="facultyIdInput" placeholder="Enter Faculty ID" />
+      <div>
+        <button id="confirmBtn">Confirm</button>
+        <button id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const resultContainer = document.getElementById("result");
     const scannedQRCodes = new Set();
@@ -155,19 +210,15 @@
     const backendUrl = "https://iareattendancemgmt.onrender.com";
 
     window.onload = () => {
-
       const courses = JSON.parse(localStorage.getItem('selectedCourses'));
       const batch = localStorage.getItem('selectedbatch')?.replace(/"/g, '');
 
-      // Display batch and courses
       const infoBox = document.getElementById("batchCourseInfo");
-
       if (courses && batch) {
         infoBox.innerHTML = `
-    📘 <strong>Batch:</strong> ${batch}<br>
-    🕐 <strong>Session:</strong> ${courses.period1}`;
+          📘 <strong>Batch:</strong> ${batch}<br>
+          🕐 <strong>Session:</strong> ${courses.period1}`;
       }
-
 
       html5QrCode.start(
         { facingMode: "environment" },
@@ -177,57 +228,74 @@
       ).catch(err => console.error("Camera start error:", err));
     };
 
-   function onScanSuccess(decodedText) {
-  console.log("Scanned QR text:", decodedText);
+    function onScanSuccess(decodedText) {
+      const rollMatch = decodedText.match(/Roll No:\s*(.*)/i);
+      const batchMatch = decodedText.match(/Batch:\s*(.*)/i);
 
-  const rollMatch = decodedText.match(/Roll No:\s*(.*)/i);
-  const batchMatch = decodedText.match(/Batch:\s*(.*)/i);
+      const rollno = rollMatch ? rollMatch[1].trim() : null;
+      let scannedBatch = batchMatch ? batchMatch[1].trim() : null;
 
-  const rollno = rollMatch ? rollMatch[1].trim() : null;
-  let scannedBatch = batchMatch ? batchMatch[1].trim() : null;
+      if (scannedBatch) {
+        scannedBatch = scannedBatch.replace(/batch[\s-]*/i, '').replace(/\s+/g, '-').toLowerCase();
+      }
 
-  if (scannedBatch) {
-    scannedBatch = scannedBatch
-      .replace(/batch[\s-]*/i, '')
-      .replace(/\s+/g, '-')
-      .toLowerCase();
-  }
+      let selectedBatch = localStorage.getItem('selectedbatch')?.replace(/"/g, '').trim().toLowerCase();
+      const now = Date.now();
+      if (now - lastScanTime < 2000) return;
+      lastScanTime = now;
 
-  let selectedBatch = localStorage.getItem('selectedbatch')?.replace(/"/g, '').trim().toLowerCase();
+      if (!rollno || !scannedBatch) {
+        resultContainer.innerText = "❌ Invalid QR format!";
+        resultContainer.classList.add('already-scanned');
+        return;
+      }
 
-  const now = Date.now();
-  if (now - lastScanTime < 2000) return;
-  lastScanTime = now;
+      if (scannedBatch !== selectedBatch) {
+        resultContainer.innerText = `⚠️ Please scan a QR from batch: ${selectedBatch}`;
+        resultContainer.classList.add('already-scanned');
+        return;
+      }
 
-  if (!rollno || !scannedBatch) {
-    console.log("Invalid QR format – rollno or batch missing");
-    resultContainer.innerText = "❌ Invalid QR format!";
-    resultContainer.classList.add('already-scanned');
-    return;
-  }
+      if (scannedQRCodes.has(rollno)) {
+        resultContainer.innerText = `⚠️ Already marked for: ${rollno}`;
+        resultContainer.classList.add('already-scanned');
+        return;
+      }
 
-  if (scannedBatch !== selectedBatch) {
-    resultContainer.innerText = `⚠️ Please scan a QR from batch: ${selectedBatch}`;
-    resultContainer.classList.add('already-scanned');
-    return;
-  }
+      scannedQRCodes.add(rollno);
+      scannedStudents.push({ rollno, batch: selectedBatch });
 
-  if (scannedQRCodes.has(rollno)) {
-    resultContainer.innerText = `⚠️ Already marked for: ${rollno}`;
-    resultContainer.classList.add('already-scanned');
-    return;
-  }
+      resultContainer.innerText = `✅ Marked for: ${rollno}`;
+      resultContainer.classList.remove('already-scanned');
+      document.getElementById("countDisplay").innerText = `✅ Marked Students: ${scannedQRCodes.size}`;
+    }
 
-  scannedQRCodes.add(rollno);
-  scannedStudents.push({ rollno, batch: selectedBatch });
+    const homeBtn = document.getElementById("homeBtn");
+    const confirmModal = document.getElementById("confirmModal");
+    const facultyIdInput = document.getElementById("facultyIdInput");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
 
-  resultContainer.innerText = `✅ Marked for: ${rollno}`;
-  document.getElementById("countDisplay").innerText = `✅ Marked Students: ${scannedQRCodes.size}`;
-  resultContainer.classList.remove('already-scanned');
-}
+    homeBtn.addEventListener("click", () => {
+      confirmModal.style.display = "flex";
+      facultyIdInput.value = "";
+    });
 
-    document.getElementById("homeBtn").addEventListener("click", () => {
-      const homeBtn = document.getElementById("homeBtn");
+    cancelBtn.addEventListener("click", () => {
+      confirmModal.style.display = "none";
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      const enteredId = facultyIdInput.value.trim();
+      const facultyId = localStorage.getItem("facultyid");
+
+      if (!facultyId || !enteredId || enteredId.toLowerCase() !== facultyId.toLowerCase()) {
+        alert("❌ Faculty ID does not match. Try again.");
+        return;
+      }
+
+
+      confirmModal.style.display = "none";
       homeBtn.disabled = true;
       homeBtn.textContent = "Processing...";
 
@@ -262,7 +330,6 @@
           resultContainer.innerText = "🎉 Attendance saved!";
           html5QrCode.stop();
 
-          // Save present count to localStorage
           const todayKey = new Date().toISOString().split('T')[0];
           const groupName = batch.toUpperCase();
           const attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || {};
@@ -270,7 +337,6 @@
 
           const presentCount = scannedQRCodes.size;
           const idx = attendanceData[todayKey].findIndex(g => g.name === groupName);
-
           const newEntry = { name: groupName, present: presentCount };
           if (idx !== -1) attendanceData[todayKey][idx] = newEntry;
           else attendanceData[todayKey].push(newEntry);
