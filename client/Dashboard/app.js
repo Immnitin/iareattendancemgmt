@@ -46,10 +46,20 @@ window.onscroll = () => {
 }
 
 window.addEventListener("load", () => {
-  setTimeout(() => {
-    document.getElementById("spinner-overlay").style.display = "none";
-  }, 1000); // 1.5 seconds
+  const spinner = document.getElementById("spinner-overlay");
+  if (spinner) {
+    spinner.style.opacity = "1";
+    setTimeout(() => {
+      spinner.style.transition = "opacity 0.3s ease";
+      spinner.style.opacity = "0";
+      setTimeout(() => {
+        spinner.style.display = "none";
+      }, 300); // matches transition time
+    }, 1000); // delay to show spinner at least 1s
+  }
 });
+
+
 function updateProfileUI(student) {
 
   const roll = student.rollno || "N/A";
@@ -92,13 +102,6 @@ function updateProfileUI(student) {
       location.reload(); // Reload once
     }
   }, 1000);
-
-
-
-
-  // Timestamp
-  const timestamp = new Date().toLocaleString();
-  document.getElementById("qrTimestamp").textContent = `Generated at: ${timestamp}`;
 }
 
 function updateAttendanceUI(attendanceData) {
@@ -177,15 +180,11 @@ function updateAttendanceUI(attendanceData) {
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("isLoggedIn") !== "true") {
-    // Redirect to login page if not logged in
-    window.location.href = "../index.html";
-  }
   const rollno = localStorage.getItem("rollno");
-  if (!rollno) {
-    console.warn("No roll number found in localStorage.");
-    return;
-  }
+   if (!rollno) {
+      window.location.href = "/";
+      return;
+    }
 
   // Profile fetch and cache
   const cachedProfileRaw = localStorage.getItem("profileData");
@@ -592,6 +591,7 @@ function logout() {
 
 
 window.addEventListener("DOMContentLoaded", () => {
+    
     const profileData = JSON.parse(localStorage.getItem("profileData"));
     const batch = profileData.batch;
 

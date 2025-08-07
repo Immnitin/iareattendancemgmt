@@ -12,6 +12,8 @@ profileBtn.onclick = function () {
   sideMenu.classList.toggle('active');
 };
 
+
+
 // On page load: Apply saved theme
 document.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme");
@@ -78,10 +80,9 @@ function logout() {
 document.addEventListener("DOMContentLoaded", () => {
   const facultyid = localStorage.getItem("facultyid");
   if (!facultyid) {
-    console.warn("No faculty id found in localStorage. Please login.");
+    window.location.href = "/";
     return;
   }
-
   const rawData = localStorage.getItem("facultyData");
   if (!rawData) return;
 

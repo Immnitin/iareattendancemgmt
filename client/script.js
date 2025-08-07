@@ -1,112 +1,122 @@
-// const form = document.getElementById("loginForm");
-// const messageBox = document.getElementById("messageBox");
-// const signInBtn = document.getElementById("loginBtn");
-// const btnText = document.getElementById("btnText");
-// const loader = document.getElementById("loader");
-// const backendUrl = "https://iareattendancemgmt.onrender.com";
+      const form = document.getElementById("loginForm");
+      const messageBox = document.getElementById("messageBox");
+      const signInBtn = document.getElementById("loginBtn");
+      const btnText = document.getElementById("btnText");
+      const loader = document.getElementById("loader");
+      const backendUrl = "https://iareattendancemgmt.onrender.com";
 
-// // Handle background color switching for selected radio label
-// const labels = document.querySelectorAll(".role-option");
+      // Role selector functionality
+      const labels = document.querySelectorAll("#roleSelector label");
 
-// function updateActive() {
-//   labels.forEach((label) => {
-//     const radio = label.querySelector('input[type="radio"]');
-//     if (radio.checked) {
-//       label.classList.add("active");
-//     } else {
-//       label.classList.remove("active");
-//     }
-//   });
-// }
+      function updateActive() {
+        labels.forEach((label) => {
+          const radio = label.querySelector('input[type="radio"]');
+          if (radio.checked) {
+            label.classList.add("selected");
+          } else {
+            label.classList.remove("selected");
+          }
+        });
+      }
 
+      labels.forEach((label) => {
+        label.addEventListener("click", () => {
+          setTimeout(updateActive, 10);
+        });
+      });
 
-// labels.forEach((label) => {
-//   label.addEventListener("click", () => {
-//     // small delay to wait for radio state change
-//     setTimeout(updateActive, 10);
-//   });
-// });
+      updateActive();
 
-// // Set initial active state on page load
-// updateActive();
+      // Form submission
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-// form.addEventListener("submit", async (e) => {
-//   e.preventDefault();
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const roleInput = document.querySelector('input[name="role"]:checked');
 
-//   const emailInput = document.getElementById("email");
-//   const passwordInput = document.getElementById("password");
-//   const roleInput = document.querySelector('input[name="role"]:checked');
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+        const role = roleInput ? roleInput.value : "";
+        // const backendUrl = "http://localhost:5000"
+        // Clear previous messages
+        messageBox.classList.remove("show", "success", "error");
+        messageBox.textContent = "";
 
-//   const email = emailInput.value.trim();
-//   const password = passwordInput.value.trim();
-//   const role = roleInput ? roleInput.value : "";
+        // Validation
+        if (!username || !password || !role) {
+          showMessage(
+            "Please fill in all fields and select your role.",
+            "error"
+          );
+          return;
+        }
 
-//   messageBox.classList.remove("show");
-//   messageBox.textContent = "";
+        const endpoint = `${backendUrl}/api/${role}login/login`;
 
-//   if (!email || !password || !role) {
-//     messageBox.textContent = "⚠️ Please fill all fields including your role.";
-//     messageBox.className = "message-box show";
-//     messageBox.style.color = "red";
-//     return;
-//   }
+        // Show loading state
+        btnText.textContent = "Signing in...";
+        loader.classList.add("visible");
+        signInBtn.disabled = true;
 
-//   const endpoint = `${backendUrl}/api/${role}/login`;
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
 
-//   btnText.textContent = "Signing in...";
-//   loader.classList.remove("hidden");
-//   signInBtn.disabled = true;
+          const data = await response.json();
 
-//   try {
-//     const response = await fetch(endpoint, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ email, password }),
-//     });
+          if (response.ok) {
+            showMessage("Login successful!...", "success");
 
-//     const data = await response.json();
+            // Store user data and redirect
+            if (role === "student" && data.student?.rollno) {
+              localStorage.setItem("isLoggedIn", "true");
+              localStorage.setItem("rollno", data.student.rollno);
+              localStorage.setItem("profileData", JSON.stringify(data.student));
+              setTimeout(() => {
+                window.location.href = "Dashboard/index.html";
+              }, 2500);
+            } else if (role === "faculty") {
+              localStorage.setItem("isLoggedIn", "true");
+              localStorage.setItem("facultyid", data.faculty.facultyid);
+              localStorage.setItem("facultyData", JSON.stringify(data.faculty));
+              setTimeout(() => {
+                window.location.href = "FacultyPage/index.html";
+              }, 2500);
+            } else if (role === "admin") {
+              localStorage.setItem("isLoggedIn", "true");
+              localStorage.setItem("adminId", data.adminId);
+              setTimeout(() => {
+                window.location.href = "AdminSection/index.html";
+              }, 2500);
+            }
+          } else {
+            showMessage(
+              data.message || "Invalid credentials. Please try again.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          showMessage(
+            "Connection error. Please check your internet and try again.",
+            "error"
+          );
+        } finally {
+          // Reset button state
+          btnText.textContent = "Sign In";
+          loader.classList.remove("visible");
+          signInBtn.disabled = false;
+        }
+      });
 
-//     if (response.ok) {
-//       messageBox.textContent = "Login successful!";
-//       messageBox.className = "message-box show";
-//       messageBox.style.color = "green";
-
-//       if (role === "student" && data.student?.rollno) {
-//         localStorage.setItem("rollno", data.student.rollno);
-//         localStorage.setItem("profileData", JSON.stringify(data.student));
-//         setTimeout(() => {
-//           window.location.href = "../Dashboard/index.html";
-//         }, 1500);
-//       } else if (role === "faculty") {
-//         localStorage.setItem("facultyEmail", email);
-//         setTimeout(() => {
-//           window.location.href = "../FacultyPage/index.html";
-//         }, 1500);
-//       } else if (role === "admin") {
-//         localStorage.setItem("facultyEmail", email);
-//         setTimeout(() => {
-//           window.location.href = "../AdminSection/index.html";
-//         }, 1500);
-//       }
-
-//       setTimeout(() => {
-//         messageBox.classList.remove("show");
-//       }, 1500);
-//     } else {
-//       messageBox.textContent = data.message || "Invalid email or password.";
-//       messageBox.className = "message-box show";
-//       messageBox.style.color = "red";
-//       setTimeout(() => messageBox.classList.remove("show"), 3000);
-//     }
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     messageBox.textContent = "❌ Server error. Please try again.";
-//     messageBox.className = "message-box show";
-//     messageBox.style.color = "red";
-//     setTimeout(() => messageBox.classList.remove("show"), 3000);
-//   } finally {
-//     btnText.textContent = "Sign in";
-//     loader.classList.add("hidden");
-//     signInBtn.disabled = false;
-//   }
-// });
+      function showMessage(text, type) {
+        messageBox.textContent = text;
+        messageBox.classList.add("show", type);
+        setTimeout(() => {
+          messageBox.classList.remove("show");
+        }, 4000);
+      }
